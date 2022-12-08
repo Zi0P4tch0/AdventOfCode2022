@@ -1,14 +1,15 @@
 UNAME_S := $(shell uname -s)
 
+EXTRA_CFLAGS := $(shell pkg-config --cflags glib-2.0)
+LIBS := $(shell pkg-config --libs glib-2.0)
+CFLAGS := -O2 -Wall -Wextra -pedantic -std=c11 -Iinclude $(EXTRA_CFLAGS)
+
 ifeq ($(UNAME_S),Darwin)
     CC := clang
 else
 	CC := gcc
+	CFLAGS += -march=native
 endif
-
-EXTRA_CFLAGS := $(shell pkg-config --cflags glib-2.0)
-CFLAGS := -march=native -O2 -Wall -Wextra -pedantic -std=c11 -Iinclude $(EXTRA_CFLAGS)
-LIBS := $(shell pkg-config --libs glib-2.0)
 
 DAYS := $(shell seq -f "day%g" 4 7)
 
