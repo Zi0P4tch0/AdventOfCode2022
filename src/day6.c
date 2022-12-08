@@ -16,7 +16,6 @@ find_marker(const gchar *input,
     for (guint i=marker_length-1; i<strlen(input); i++) {
         guint lhs = i-marker_length+1;
         g_autofree gchar *slice = g_strndup(input+lhs, i-lhs+1);
-        // Check is all elements are unique (spartan, but so is C, we should be fine)
         gboolean unique = TRUE;
         for(guint j=0; j<marker_length; j++) {
             for(guint k=0; k<marker_length; k++) {

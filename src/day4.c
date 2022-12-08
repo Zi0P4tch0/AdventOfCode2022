@@ -4,6 +4,7 @@
 #include "benchmark.h"
 #include "io.h"
 #include "mem.h"
+#include "macros.h"
 
 struct range {
     guint left;
@@ -60,11 +61,11 @@ int main(int argc, char *argv[])
         g_autostrvfree gchar **tokens = g_strsplit(current_line, ",", 0);
         struct range left = {.left = 0, .right = 0}, right = { .left = 0, .right = 0};
         g_autostrvfree gchar **left_tokens = g_strsplit(tokens[0], "-", 0);
-        left.left = g_ascii_strtoull(left_tokens[0], NULL, 10);
-        left.right = g_ascii_strtoull(left_tokens[1], NULL, 10);
+        left.left = GUINT_FROM_STR(left_tokens[0]);
+        left.right = GUINT_FROM_STR(left_tokens[1]);
         g_autostrvfree gchar **right_tokens = g_strsplit(tokens[1], "-", 0);
-        right.left = g_ascii_strtoull(right_tokens[0], NULL, 10);
-        right.right = g_ascii_strtoull(right_tokens[1], NULL, 10);
+        right.left = GUINT_FROM_STR(right_tokens[0]);
+        right.right = GUINT_FROM_STR(right_tokens[1]);
         if (range_contains_range(&left, &right) || range_contains_range(&right, &left)) {
             part1++;
         }
