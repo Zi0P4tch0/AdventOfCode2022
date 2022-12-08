@@ -11,7 +11,7 @@ else
 	CFLAGS += -march=native
 endif
 
-DAYS := $(shell seq -f "day%g" 4 7)
+DAYS := $(shell seq -f "day%g" 4 8)
 
 .PHONY: all clean
 
