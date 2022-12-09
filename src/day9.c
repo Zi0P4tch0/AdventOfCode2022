@@ -17,7 +17,9 @@ struct position {
 #define POS_IS_EQUAL(lhs, rhs) (lhs.x == rhs.x && lhs.y == rhs.y)
 
 static inline void
-knot_next_position(const struct position *leader, struct position *follower) {
+knot_next_position(const struct position *leader, 
+                   struct position       *follower) 
+{
     if (ABS(leader->x - follower->x) <= 1 && ABS(leader->y - follower->y) <= 1) { return; }
     gboolean jump = FALSE;
     if (leader->y == follower->y && ABS(leader->x - follower->x) <= 2) {
@@ -47,7 +49,9 @@ knot_next_position(const struct position *leader, struct position *follower) {
 }
 
 static inline gboolean
-g_array_contains_position(const GArray *array, const struct position *pos) {
+g_array_contains_position(const GArray          *array, 
+                          const struct position *pos) 
+{
     for (guint i=0; i<array->len; i++) {
         struct position current_pos = g_array_index(array, struct position, i);
         if (POS_IS_EQUAL(current_pos, (*pos))) {
@@ -58,7 +62,11 @@ g_array_contains_position(const GArray *array, const struct position *pos) {
 }
 
 static inline void
-draw(const struct position *head_pos, const struct position *tails, gsize n_tails, gint size) {
+draw(const struct position *head_pos, 
+     const struct position *tails, 
+     gsize                  n_tails, 
+     gint                   size) 
+{
     for (gint y=-size; y<size; y++) {
         for (gint x=-size; x<size; x++) {
             struct position current_pos = {.x = x, .y = y};
@@ -82,7 +90,11 @@ draw(const struct position *head_pos, const struct position *tails, gsize n_tail
 }
 
 static guint
-process(gchar **lines, guint n_lines, struct position *head, struct position *tails, guint n_tails) 
+process(gchar           **lines, 
+        guint             n_lines, 
+        struct position  *head, 
+        struct position  *tails, 
+        guint             n_tails) 
 {
     g_autoptr(GArray) visited = g_array_new(FALSE, TRUE, sizeof(struct position));
     for (guint i=0; i<n_lines; i++) {
