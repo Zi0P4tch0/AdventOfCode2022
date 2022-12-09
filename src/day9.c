@@ -1,5 +1,10 @@
 #include <stdio.h>
 #include <glib.h>
+#include <ncurses.h>
+
+#if __APPLE__
+    #include <unistd.h>
+#endif
 
 #include "benchmark.h"
 #include "io.h"
@@ -61,32 +66,59 @@ g_array_contains_position(const GArray          *array,
     return FALSE;
 }
 
+#define NCURSES_DRAW_IF_WITHIN_BOUNDS(y, x, height, width, ch)  \
+{                                                               \
+    if (y >= 0 && y < height && x >= 0 && x < width) {          \
+        wmove(stdscr, y, x);                                    \
+        waddch(stdscr, ch);                                     \
+    }                                                           \
+}
+
 static inline void
 draw(const struct position *head_pos, 
      const struct position *tails, 
-     gsize                  n_tails, 
-     gint                   size) 
+     gsize                  n_tails,
+     const GArray          *visited) 
 {
-    for (gint y=-size; y<size; y++) {
-        for (gint x=-size; x<size; x++) {
-            struct position current_pos = {.x = x, .y = y};
-            gchar output = '.';
-            if (current_pos.x == 0 && current_pos.y == 0) {
-                output = 's';
-            }
-            for (guint t=0; t<n_tails; t++) {
-                const struct position *current_tail = tails + t;
-                if (POS_IS_EQUAL(current_pos, (*current_tail))) {
-                    output = (n_tails == 1 ? 'T' : '1' + t);
-                }
-            }
-            if (POS_IS_EQUAL(current_pos, (*head_pos))) {
-                output = 'H';
-            }
-            printf("%c", output);
+    gint height, width;
+    getmaxyx(stdscr, height, width);
+
+    for (gint y=0; y<height; y++) {
+        for (gint x=0; x<width; x++) {
+            move(y ,x);
+            addch('.' | A_DIM);
         }
-        printf("\n");
     }
+
+    NCURSES_DRAW_IF_WITHIN_BOUNDS((height/2), 
+                                  (width / 2),
+                                  height, width, 's' | A_BOLD);
+
+    attron(COLOR_PAIR(1));
+    for (guint v=0; v<visited->len; v++) {
+        struct position current_pos = g_array_index(visited, struct position, v);
+        NCURSES_DRAW_IF_WITHIN_BOUNDS(current_pos.y + (height/2), 
+                                      current_pos.x + (width / 2),
+                                      height, width, '#' | A_BOLD);
+    }
+    attroff(COLOR_PAIR(1));
+
+    for (guint t=0; t<n_tails; t++) {
+        const struct position *current_tail = tails + t;
+        gchar output = (n_tails == 1 ? 'T' : '1' + t);
+        NCURSES_DRAW_IF_WITHIN_BOUNDS(current_tail->y + (height/2), 
+                                      current_tail->x + (width / 2),
+                                      height, width, output | A_BOLD);
+    }
+
+    attron(COLOR_PAIR(2));
+    NCURSES_DRAW_IF_WITHIN_BOUNDS(head_pos->y + (height/2), 
+                                  head_pos->x + (width / 2),
+                                  height, width, 'H' | A_BOLD);
+    attroff(COLOR_PAIR(2));
+
+    refresh();
+
 }
 
 static guint
@@ -97,6 +129,8 @@ process(gchar           **lines,
         guint             n_tails) 
 {
     g_autoptr(GArray) visited = g_array_new(FALSE, TRUE, sizeof(struct position));
+    draw(head, tails, n_tails, visited);
+    g_usleep(200);
     for (guint i=0; i<n_lines; i++) {
         const gchar *current_line = *(lines+i);
         g_autostrvfree gchar **tokens = g_strsplit(current_line, " ", 0);
@@ -116,10 +150,14 @@ process(gchar           **lines,
                     head->y--;
                     break;
             }
+            draw(head, tails, n_tails, visited);
+            g_usleep(200);
             for (guint t=0; t<n_tails; t++) {
                 const struct position *leader = (t == 0 ? head : tails + (t - 1));
                 struct position *follower =  tails + t;
                 knot_next_position(leader, follower);
+                draw(head, tails, n_tails, visited);
+                g_usleep(200);
             }
 
             if (!g_array_contains_position(visited, tails + (n_tails - 1))) {
@@ -150,19 +188,29 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Ncurses
+
+    initscr();
+    noecho();
+    cbreak();
+    curs_set(0);
+
+    start_color();
+    init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(2, COLOR_RED, COLOR_BLACK);
+
+    clear();
+
+    // Required variables
+
     struct position head = {.x = 0, .y = .0};
     struct position tails[PT2_TAILS];
     memset(tails, 0, sizeof(struct position) * PT2_TAILS);
     
-    BENCHMARK_START(day9_part1);
-
     // Part I
 
     guint part1 = process(lines, n_lines, &head, tails, PT1_TAILS);
-
-    BENCHMARK_END(day9_part1);
-
-    printf("Part I: %d.\n", part1);
+    clear();
 
     // Cleanup
 
@@ -171,13 +219,14 @@ int main(int argc, char *argv[])
 
      // Part II
 
-    BENCHMARK_START(day9_part2);
-
     guint part2 = process(lines, n_lines, &head, tails, PT2_TAILS);
 
-    BENCHMARK_END(day9_part2);
+    // Stop cursing
 
-    printf("Part II: %d.\n", part2);
+    endwin();
+
+    g_print("Part I: %d.\n", part1);
+    g_print("Part II: %d.\n", part2);
  
     return 0;
 }
