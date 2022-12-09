@@ -31,8 +31,6 @@ int main(int argc, char *argv[])
         g_print("Usage: %s INPUT_FILE.\n", argv[0]);
         return 1;
     }
-
-    BENCHMARK_START(day1);
     
     // Read file
     guint n_lines = 0;
@@ -44,6 +42,8 @@ int main(int argc, char *argv[])
     }
 
     // Processing
+
+    BENCHMARK_START(day1);
 
     g_autoptr(GArray) elves = g_array_new(FALSE, TRUE, sizeof(guint));
     guint tmp = 0;
@@ -65,15 +65,14 @@ int main(int argc, char *argv[])
 
     guint part1 = g_array_index(elves, guint, 0);
 
-    g_print("Part I: %d.\n", part1);
-
     // Part II
 
     guint part2 = g_array_index(elves, guint, 0) + g_array_index(elves, guint, 1) + g_array_index(elves, guint, 2);
 
-    g_print("Part II: %d.\n", part2);
- 
     BENCHMARK_END(day1);
 
+    g_print("Part I: %d.\n", part1);
+    g_print("Part II: %d.\n", part2);
+ 
     return 0;
 }

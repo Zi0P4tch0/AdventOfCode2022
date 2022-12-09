@@ -16,8 +16,6 @@ int main(int argc, char *argv[])
         g_print("Usage: %s INPUT_FILE.\n", argv[0]);
         return 1;
     }
-
-    BENCHMARK_START(day9);
     
     // Read file
     guint n_lines = 0;
@@ -30,7 +28,5 @@ int main(int argc, char *argv[])
 
     // Processing
  
-    BENCHMARK_END(day9);
-
     return 0;
 }

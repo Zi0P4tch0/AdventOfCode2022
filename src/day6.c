@@ -43,8 +43,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    BENCHMARK_START(day6);
-
     // Read file
 
     guint n_lines = 0;
@@ -58,10 +56,12 @@ int main(int argc, char *argv[])
     // Part I and II
 
     gchar *input = lines[0];
+    BENCHMARK_START(day6_part1);
     printf("Part I: %d.\n", find_marker(input, PART_I_MARKER_LENGTH));
+    BENCHMARK_END(day6_part1);
+    BENCHMARK_START(day6_part2);
     printf("Part II: %d.\n", find_marker(input, PART_II_MARKER_LENGTH));
-
-    BENCHMARK_END(day6);
+    BENCHMARK_END(day6_part2);
 
     return 0;
 }

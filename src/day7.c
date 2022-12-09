@@ -126,8 +126,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    BENCHMARK_START(day7);
-
     // Read file
 
     guint n_lines = 0;
@@ -204,12 +202,17 @@ int main(int argc, char *argv[])
     //printf("%s", t);
 
     // Part I
+    BENCHMARK_START(day7_part1);
 
     guint part1 = 0;
     g_node_traverse(root_node, G_PRE_ORDER, G_TRAVERSE_ALL, -1, g_node_traverse_fn_part1, &part1);
+    
+    BENCHMARK_END(day7_part1);
+
     g_print("Part I: %d.\n", part1);
 
     // Part II
+    BENCHMARK_START(day7_part2);
 
     // Get directories
     g_autoptr(GPtrArray) dir_nodes = NULL;
@@ -225,12 +228,11 @@ int main(int argc, char *argv[])
         const GNode *current_dir_node = g_ptr_array_index(dir_nodes, i);
         guint current_dir_size = filesystem_node_total_size((GNode*)current_dir_node);
         if (FILESYSTEM_MAX_SPACE - root_size + current_dir_size >= FILESYSTEM_MIN_SPACE_FOR_UPDATE) {
+            BENCHMARK_END(day7_part2);
             g_print("Part II: %d.\n", current_dir_size);
             break;
         }
     }
 
-    BENCHMARK_END(day7);
-    
     return 0;
 }

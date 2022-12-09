@@ -15,8 +15,6 @@ int main(int argc, char *argv[])
         g_print("Usage: %s INPUT_FILE.\n", argv[0]);
         return 1;
     }
-
-    BENCHMARK_START(day8);
     
     // Read file
     guint n_lines = 0;
@@ -30,6 +28,8 @@ int main(int argc, char *argv[])
     guint width = strlen(*(lines));
 
     // Part I
+    BENCHMARK_START(day8_part1);
+
     guint part1 = (width * 2) + ((n_lines * 2) - 4);
 
     for (guint row=1; row<n_lines-1; row++) {
@@ -72,9 +72,14 @@ int main(int argc, char *argv[])
         }
     }
 
+    BENCHMARK_END(day8_part1);
+
     g_print("Part I: %d.\n", part1);
 
     // Part II
+
+    BENCHMARK_START(day8_part2);
+
     guint part2 = 0;
 
     for (guint row=0; row<n_lines; row++) {
@@ -117,9 +122,9 @@ int main(int argc, char *argv[])
         
     }
 
-    g_print("Part II: %d.\n", part2);
+    BENCHMARK_END(day8_part2);
 
-    BENCHMARK_END(day8);
+    g_print("Part II: %d.\n", part2);
 
     return 0;
 }

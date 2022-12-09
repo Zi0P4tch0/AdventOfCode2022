@@ -41,8 +41,6 @@ int main(int argc, char *argv[])
         g_print("Usage: %s INPUT_FILE.\n", argv[0]);
         return 1;
     }
-
-    BENCHMARK_START(day4);
     
     // Read file
     guint n_lines = 0;
@@ -54,6 +52,8 @@ int main(int argc, char *argv[])
     }
 
     // Part I & II
+    BENCHMARK_START(day4);
+
     guint part1 = 0, part2 = 0;
 
     for (guint i=0; i<n_lines; i++) {
@@ -74,10 +74,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    BENCHMARK_END(day4);
+
     g_print("Part I: %d.\n", part1);
     g_print("Part II: %d.\n", part2);
-
-    BENCHMARK_END(day4);
 
     return 0;
 }

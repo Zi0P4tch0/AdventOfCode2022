@@ -16,8 +16,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    BENCHMARK_START(day5);
-
     // Read file
 
     guint n_lines = 0;
@@ -29,6 +27,8 @@ int main(int argc, char *argv[])
     }
     
     // Find separator in input
+
+    BENCHMARK_START(day5_populate_crane);
 
     guint separator_index = 0;
     for (guint i=0; i<n_lines; i++) {
@@ -68,7 +68,12 @@ int main(int argc, char *argv[])
 
     g_autoptr(GPtrArray) stacks_copy = g_ptr_array_copy(stacks, (GCopyFunc)g_queue_copy, NULL);
 
+    BENCHMARK_END(day5_populate_crane);
+
+
     // Part I
+    BENCHMARK_START(day5_part1);
+
     for (guint i=separator_index+1; i<n_lines; i++) {
         g_autostrvfree gchar **tokens = g_strsplit(lines[i], " ", 0);
         guint count = g_ascii_strtoull(tokens[1], NULL, 10);
@@ -90,9 +95,13 @@ int main(int argc, char *argv[])
     }
     *(p1_cargo+n_stacks) = '\0';
 
+    BENCHMARK_END(day5_part1);
+
     g_print("Part I: %s.\n", p1_cargo);
 
     // Part II
+    BENCHMARK_START(day5_part2);
+
     for (guint i=separator_index+1; i<n_lines; i++) {
         g_autostrvfree gchar **tokens = g_strsplit(lines[i], " ", 0);
         guint count = g_ascii_strtoull(tokens[1], NULL, 10);
@@ -121,9 +130,9 @@ int main(int argc, char *argv[])
     }
     *(p2_cargo+n_stacks) = '\0';
 
-    g_print("Part II: %s.\n", p2_cargo);
+    BENCHMARK_END(day5_part2);
 
-    BENCHMARK_END(day5);
+    g_print("Part II: %s.\n", p2_cargo);
 
     return 0;
 }
