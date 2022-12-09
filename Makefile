@@ -5,13 +5,12 @@ LIBS := $(shell pkg-config --libs glib-2.0)
 CFLAGS := -O2 -Wall -Wextra -pedantic -std=c11 -Iinclude $(EXTRA_CFLAGS)
 
 ifeq ($(UNAME_S),Darwin)
-    CC := clang
+    CC ?= clang
 else
-	CC := gcc
-	CFLAGS += -march=native
+	CC ?= gcc
 endif
 
-DAYS := $(shell seq -f "day%g" 1 8)
+DAYS := $(shell seq -f "day%g" 1 9)
 
 .PHONY: all clean benchmark
 
@@ -34,5 +33,5 @@ clean:
 
 benchmark: all
 	for day in $(DAYS); do \
-		hyperfine -N --warmup 3 "./$$day input/$$day.txt"; \
+		hyperfine -N --warmup 10 "./$$day input/$$day.txt"; \
 	done
