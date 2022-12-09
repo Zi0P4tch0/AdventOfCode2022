@@ -142,13 +142,13 @@ int main(int argc, char *argv[])
     struct position tails[PT2_TAILS];
     memset(tails, 0, sizeof(struct position) * PT2_TAILS);
     
-    BENCHMARK_START(day1_part1);
+    BENCHMARK_START(day9_part1);
 
     // Part I
 
     guint part1 = process(lines, n_lines, &head, tails, PT1_TAILS);
 
-    BENCHMARK_END(day1_part1);
+    BENCHMARK_END(day9_part1);
 
     printf("Part I: %d.\n", part1);
 
@@ -159,11 +159,11 @@ int main(int argc, char *argv[])
 
      // Part II
 
-    BENCHMARK_START(day1_part2);
+    BENCHMARK_START(day9_part2);
 
     guint part2 = process(lines, n_lines, &head, tails, PT2_TAILS);
 
-    BENCHMARK_END(day1_part2);
+    BENCHMARK_END(day9_part2);
 
     printf("Part II: %d.\n", part2);
  
