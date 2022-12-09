@@ -11,9 +11,9 @@ else
 	CFLAGS += -march=native
 endif
 
-DAYS := $(shell seq -f "day%g" 4 8)
+DAYS := $(shell seq -f "day%g" 2 8)
 
-.PHONY: all clean
+.PHONY: all clean benchmark
 
 all: $(DAYS)
 
@@ -31,3 +31,8 @@ obj:
 
 clean:
 	rm -rf $(DAYS) obj
+
+benchmark: all
+	for day in $(DAYS); do \
+		hyperfine -N --warmup 3 "./$$day input/$$day.txt"; \
+	done
