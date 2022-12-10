@@ -10,7 +10,7 @@ else
 	CC ?= gcc
 endif
 
-DAYS := $(shell seq -f "day%g" 1 9)
+DAYS := $(shell seq -f "day%g" 1 10)
 
 .PHONY: all clean benchmark
 
