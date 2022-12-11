@@ -8,9 +8,10 @@ ifeq ($(UNAME_S),Darwin)
     CC ?= clang
 else
 	CC ?= gcc
+	CFLAGS += -march=native
 endif
 
-DAYS := $(shell seq -f "day%g" 1 10)
+DAYS := $(shell seq -f "day%g" 1 11)
 
 .PHONY: all clean benchmark
 

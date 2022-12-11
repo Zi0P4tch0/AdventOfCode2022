@@ -3,6 +3,7 @@
     "files.associations": {
         "typeinfo": "c",
         "benchmark.h": "c",
-        "random": "c"
+        "random": "c",
+        "time.h": "c"
     }
 }
