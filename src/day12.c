@@ -26,8 +26,10 @@ g_ptr_array_filter(const GPtrArray *array,
 
     GPtrArray *result = g_ptr_array_new();
 
+    #pragma omp parallel for shared(result) schedule(static) ordered
     for (guint i=0; i<array->len; i++) {
         if (func(g_ptr_array_index(array, i), user_data)) {
+            #pragma omp ordered
             g_ptr_array_add(result, g_ptr_array_index(array, i));
         }
     }
@@ -67,7 +69,6 @@ node_is_reachable_and_not_visited(gconstpointer data, gpointer user_data)
 static void 
 bfs(GPtrArray *all_nodes, struct node *start)
 {
-
     g_autoptr(GQueue) to_visit = g_queue_new();
 
     g_queue_push_tail(to_visit, start);
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
 
     // Part II
 
-     BENCHMARK_START(day12_part2);
+    BENCHMARK_START(day12_part2);
 
     guint part2 = G_MAXUINT;
 
