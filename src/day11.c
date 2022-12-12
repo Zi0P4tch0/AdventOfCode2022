@@ -129,12 +129,13 @@ do_the_monkey_business(GPtrArray *monkeys, guint rounds, gboolean apply_relief)
 
             }
 
-            g_array_free(current_monkey->items, TRUE);
-            current_monkey->items = g_array_new(FALSE, TRUE, sizeof(MONKEY_ITEMS_TYPE));
+            g_array_remove_range(current_monkey->items, 0, current_monkey->items->len);
 
         }
 
     }
+
+    g_ptr_array_sort(monkeys, g_ptr_array_monkeys_sort_by_inspections);
 
 }
 
@@ -217,18 +218,12 @@ int main(int argc, char *argv[])
 
     do_the_monkey_business(monkeys, PT1_ROUNDS, TRUE);
 
-    {
-        g_autoptr(GPtrArray) tmp = g_ptr_array_copy(monkeys, monkey_copy, NULL);
-
-        g_ptr_array_sort(tmp, g_ptr_array_monkeys_sort_by_inspections);
-
-        struct monkey *first_monkey = g_ptr_array_index(tmp, 0);
-        struct monkey *second_monkey = g_ptr_array_index(tmp, 1);
-
-        g_print("Part I: %lu.\n", first_monkey->inspections * second_monkey->inspections);
-    }
-
     BENCHMARK_END(day11_part1);
+
+    struct monkey *first_monkey = g_ptr_array_index(monkeys, 0);
+    struct monkey *second_monkey = g_ptr_array_index(monkeys, 1);
+
+    g_print("Part I: %lu.\n", first_monkey->inspections * second_monkey->inspections);
 
     // Part II
 
@@ -236,18 +231,12 @@ int main(int argc, char *argv[])
 
     do_the_monkey_business(monkeys_copy, PT2_ROUNDS, FALSE);
 
-    {
-        g_autoptr(GPtrArray) tmp = g_ptr_array_copy(monkeys_copy, monkey_copy, NULL);
-
-        g_ptr_array_sort(tmp, g_ptr_array_monkeys_sort_by_inspections);
-
-        struct monkey *first_monkey = g_ptr_array_index(tmp, 0);
-        struct monkey *second_monkey = g_ptr_array_index(tmp, 1);
-
-        g_print("Part II: %lu.\n", first_monkey->inspections * second_monkey->inspections);
-    }  
-
     BENCHMARK_END(day11_part2);
+
+    first_monkey = g_ptr_array_index(monkeys_copy, 0);
+    second_monkey = g_ptr_array_index(monkeys_copy, 1);
+
+    g_print("Part I: %lu.\n", first_monkey->inspections * second_monkey->inspections);
 
     return 0;
 }
