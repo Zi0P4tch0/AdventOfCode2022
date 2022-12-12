@@ -10,6 +10,7 @@ struct node {
     guint row;
     guint column;
     gchar value;
+    gboolean visited;
     struct node *previous;
 };
 
@@ -40,6 +41,10 @@ node_is_reachable_and_not_visited(gconstpointer data, gpointer user_data)
     const struct node *node = data;
     const struct node *source_node = user_data;
 
+    if (node->visited) {
+        return FALSE;
+    }
+
     gboolean is_in_reach = (
         node->row == source_node->row-1 && node->column == source_node->column ||
         node->row == source_node->row && node->column == source_node->column+1 ||
@@ -64,10 +69,9 @@ bfs(GPtrArray *all_nodes, struct node *start)
 {
 
     g_autoptr(GQueue) to_visit = g_queue_new();
-    g_autoptr(GPtrArray) visited = g_ptr_array_new();
 
     g_queue_push_tail(to_visit, start);
-    g_ptr_array_add(visited, start);
+    start->visited = TRUE;
 
     while (to_visit->length > 0) {
         
@@ -77,14 +81,10 @@ bfs(GPtrArray *all_nodes, struct node *start)
 
         for (guint i=0; i<reachable_nodes->len; i++) {
             struct node *reachable_node = g_ptr_array_index(reachable_nodes, i);
-            if (g_ptr_array_find(visited, reachable_node, NULL)) {
-                continue;
-            }
-
             reachable_node->previous = current_node;
 
             g_queue_push_tail(to_visit, reachable_node);
-            g_ptr_array_add(visited, reachable_node);
+            reachable_node->visited = TRUE;
         }
     }
     
@@ -141,6 +141,8 @@ int main(int argc, char *argv[])
 
     // Part I
 
+    BENCHMARK_START(day12_part1);
+
     guint part1 = 0;
     bfs(nodes, start);
     
@@ -149,18 +151,23 @@ int main(int argc, char *argv[])
         part1++;
         it = it->previous;
     }
+
+    BENCHMARK_END(day12_part1);
   
     g_print("Part I: %u\n", part1);
 
     // Part II
 
+     BENCHMARK_START(day12_part2);
+
     guint part2 = G_MAXUINT;
 
     for (guint i=0; i<a_nodes->len; i++) {
-        // Reset all previous on all nodes
+        // Reset nodes
         for (guint j=0; j<nodes->len; j++) {
             struct node *node = g_ptr_array_index(nodes, j);
             node->previous = NULL;
+            node->visited = FALSE;
         }
         struct node *a_node = g_ptr_array_index(a_nodes, i);
         bfs(nodes, a_node);
@@ -174,6 +181,8 @@ int main(int argc, char *argv[])
             part2 = MIN(part2, steps);
         }
     }
+
+    BENCHMARK_END(day12_part2);
 
     g_print("Part II: %u\n", part2);
  
