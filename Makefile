@@ -11,7 +11,7 @@ else
 	CFLAGS += -march=native
 endif
 
-DAYS := $(shell seq -f "day%g" 1 11)
+DAYS := $(shell seq -f "day%g" 1 12)
 
 .PHONY: all clean benchmark
 
