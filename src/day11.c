@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
     first_monkey = g_ptr_array_index(monkeys_copy, 0);
     second_monkey = g_ptr_array_index(monkeys_copy, 1);
 
-    g_print("Part I: %lu.\n", first_monkey->inspections * second_monkey->inspections);
+    g_print("Part II: %lu.\n", first_monkey->inspections * second_monkey->inspections);
 
     return 0;
 }
