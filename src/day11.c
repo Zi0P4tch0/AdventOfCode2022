@@ -8,13 +8,32 @@
 
 #define PT1_ROUNDS ((guint)20)
 #define PT2_ROUNDS ((guint)10000)
+#define MONKEY_ITEMS_TYPE gulong
 
-#define WORRY_OP_RHS_SELF ((gint)-1)
+static gulong
+worry_op_sum(gulong lhs, gulong rhs)
+{
+    return lhs + rhs;
+}
+
+static gulong
+worry_op_mul(gulong lhs, gulong rhs)
+{
+    return lhs * rhs;
+}
+
+static gulong 
+worry_op_sq(gulong lhs, gulong rhs)
+{
+    return lhs * lhs;
+}
+
+typedef gulong (*monkey_worry_op)(gulong lhs, gulong rhs);
 
 struct monkey {
     GArray *items;
     gulong inspections;
-    gboolean worry_op_is_sum;
+    monkey_worry_op worry_op;
     guint worry_op_rhs;
     guint test;
     guint target_monkey_if_true;
@@ -25,7 +44,7 @@ static inline struct monkey*
 monkey_new() 
 {
     struct monkey *new_monkey = g_malloc0(sizeof(*new_monkey));
-    new_monkey->items = g_array_new(FALSE, TRUE, sizeof(guint));
+    new_monkey->items = g_array_new(FALSE, TRUE, sizeof(long long));
     return new_monkey;
 }
 
@@ -44,7 +63,7 @@ monkey_copy(gconstpointer src, gpointer user_data)
     struct monkey *dst_monkey = monkey_new();
     dst_monkey->items =g_array_copy(src_monkey->items);
     dst_monkey->inspections = src_monkey->inspections;
-    dst_monkey->worry_op_is_sum = src_monkey->worry_op_is_sum;
+    dst_monkey->worry_op = src_monkey->worry_op;
     dst_monkey->worry_op_rhs = src_monkey->worry_op_rhs;
     dst_monkey->test = src_monkey->test;
     dst_monkey->target_monkey_if_true = src_monkey->target_monkey_if_true;
@@ -54,90 +73,68 @@ monkey_copy(gconstpointer src, gpointer user_data)
 
 static gint 
 g_ptr_array_monkeys_sort_by_inspections(gconstpointer a, 
-                                gconstpointer b)
+                                        gconstpointer b)
 {
     const struct monkey *lhs = *(struct monkey**)a;
     const struct monkey *rhs = *(struct monkey**)b;
 
-    return mpz_cmp(lhs->inspections, rhs->inspections) * -1;
+    if (lhs->inspections < rhs->inspections) {
+        return 1;
+    } else if (lhs->inspections > rhs->inspections) {
+        return -1;
+    } else {
+        return 0;
+    }
 }
 
 static void
-do_the_monkey_business(GPtrArray *monkeys, guint rounds)
+do_the_monkey_business(GPtrArray *monkeys, guint rounds, gboolean apply_relief)
 {
+    guint lcm = 1;
+
+    for (guint m=0; m<monkeys->len; m++) {
+        struct monkey * current_monkey = g_ptr_array_index(monkeys, m);
+        lcm *= current_monkey->test;
+    }
 
     for (guint round=0; round<rounds; round++) {
-        
-        g_print("Round %u/%u.\n", round, rounds);
-        
+                
         for (guint m=0; m<monkeys->len; m++) {
-
-            g_print("Monkey %u/%u.\n", m, monkeys->len);
             
             struct monkey * current_monkey = g_ptr_array_index(monkeys, m);
 
             for (guint i=0; i<current_monkey->items->len; i++) {
 
-                mpz_add_ui(current_monkey->inspections, current_monkey->inspections, one);
+                current_monkey->inspections++;
 
-                struct mpz_t_wrapper *current_item_ptr = g_ptr_array_index(current_monkey->items, i);
+                MONKEY_ITEMS_TYPE current_item = g_array_index(current_monkey->items, MONKEY_ITEMS_TYPE, i);
 
-                if (current_monkey->worry_op_rhs == WORRY_OP_RHS_SELF) {
+                current_item = current_monkey->worry_op(current_item, current_monkey->worry_op_rhs);
 
-                    if (current_monkey->worry_op_is_sum) {
-                        mpz_add(current_item_ptr->value, current_item_ptr->value, current_item_ptr->value);
-                    } else {
-                        mpz_t tmp;
-                        mpz_init(tmp);
-                        mpz_mul(tmp, current_item_ptr->value, current_item_ptr->value);
-                        mpz_set(current_item_ptr->value, tmp);
-                        mpz_clear(tmp);
-                    }
-
-                }  else {
-                    
-                    mpz_init_set_ui(rhs, current_monkey->worry_op_rhs);
-                    
-                    if (current_monkey->worry_op_is_sum) {
-                        mpz_add(current_item_ptr->value, current_item_ptr->value, rhs);
-                    } else {
-                        mpz_t tmp;
-                        mpz_init(tmp);
-                        mpz_mul(tmp, current_item_ptr->value, rhs);
-                        mpz_set(current_item_ptr->value, tmp);
-                        mpz_clear(tmp);
-                    }
-    
+                if (apply_relief) {
+                    current_item /= 3;
                 }
 
-                mpz_div(current_item_ptr->value, current_item_ptr->value, three);
+                current_item %= lcm;
 
                 struct monkey *next_monkey = NULL;
     
-                if (mpz_divisible_ui_p(current_item_ptr->value, current_monkey->test)) {
+                if (current_item % current_monkey->test == 0) {
                     next_monkey = g_ptr_array_index(monkeys, current_monkey->target_monkey_if_true);
                 } else {
                     next_monkey = g_ptr_array_index(monkeys, current_monkey->target_monkey_if_false);
                 }
 
-                struct mpz_t_wrapper *next_item_ptr = g_malloc0(sizeof(*next_item_ptr));
-                mpz_init_set(next_item_ptr->value, current_item_ptr->value);
-                g_ptr_array_add(next_monkey->items, next_item_ptr);
+                g_array_append_val(next_monkey->items, current_item);
 
             }
 
-            g_ptr_array_free(current_monkey->items, TRUE);
-            current_monkey->items = g_ptr_array_new_with_free_func(mpz_t_wrapper_free);
+            g_array_free(current_monkey->items, TRUE);
+            current_monkey->items = g_array_new(FALSE, TRUE, sizeof(MONKEY_ITEMS_TYPE));
 
         }
 
     }
-
-    g_ptr_array_sort(monkeys, g_ptr_array_monkeys_sort_by_inspections);
-
-    mpz_clear(one);
-    mpz_clear(three);
-    mpz_clear(rhs);
 
 }
 
@@ -183,15 +180,22 @@ int main(int argc, char *argv[])
                     gchar *current_token = tokens[j];
                     current_token[strcspn(current_token, ",")] = 0;
                     
-                    gint item = GINT_FROM_STR(current_token);
+                    MONKEY_ITEMS_TYPE item = g_ascii_strtoull(current_token, NULL, 10);
                     
-                    struct mpz_t_wrapper *wrapper = g_malloc0(sizeof(*wrapper));
-                    mpz_init_set_ui(wrapper->value, item);
-                    g_ptr_array_add(current_monkey->items, wrapper);
+                    g_array_append_val(current_monkey->items, item);
                 }
             } else if (!strcmp("Operation:", tokens[2])) {
-                current_monkey->worry_op_is_sum = tokens[6][0] == '+';
-                current_monkey->worry_op_rhs = (!strcmp("old", tokens[7]) ? WORRY_OP_RHS_SELF : GUINT_FROM_STR(tokens[7]));
+                if (tokens[6][0] == '+') {
+                    current_monkey->worry_op = worry_op_sum;
+                    current_monkey->worry_op_rhs = GUINT_FROM_STR(tokens[7]);
+                } else if (tokens[6][0] == '*') {
+                    current_monkey->worry_op = worry_op_mul;
+                    if (!strcmp("old", tokens[7])) {
+                        current_monkey->worry_op = worry_op_sq;
+                    } else {
+                        current_monkey->worry_op_rhs = GUINT_FROM_STR(tokens[7]);
+                    }
+                }      
             } else if (!strcmp("Test:", tokens[2])) {
                 current_monkey->test = GUINT_FROM_STR(tokens[5]);
             } else if (!strcmp("true:", tokens[5])) {
@@ -209,39 +213,41 @@ int main(int argc, char *argv[])
 
     // Part I
 
-    do_the_monkey_business(monkeys, PT1_ROUNDS);
-    
-    struct monkey *first_monkey = g_ptr_array_index(monkeys, 0);
-    struct monkey *second_monkey = g_ptr_array_index(monkeys, 1);
+    BENCHMARK_START(day11_part1);
+
+    do_the_monkey_business(monkeys, PT1_ROUNDS, TRUE);
 
     {
-        mpz_t output;
-        mpz_init(output);
-        mpz_mul(output, first_monkey->inspections, second_monkey->inspections);
-        g_autofree gchar *output_str = g_malloc0(mpz_sizeinbase(output, 10) + 2);
-        mpz_get_str(output_str, 10, output);
-        mpz_clear(output);
+        g_autoptr(GPtrArray) tmp = g_ptr_array_copy(monkeys, monkey_copy, NULL);
 
-        g_print("Part I: %s.\n", output_str);
+        g_ptr_array_sort(tmp, g_ptr_array_monkeys_sort_by_inspections);
+
+        struct monkey *first_monkey = g_ptr_array_index(tmp, 0);
+        struct monkey *second_monkey = g_ptr_array_index(tmp, 1);
+
+        g_print("Part I: %lu.\n", first_monkey->inspections * second_monkey->inspections);
     }
+
+    BENCHMARK_END(day11_part1);
 
     // Part II
 
-    do_the_monkey_business(monkeys_copy, PT2_ROUNDS);
-    
-    first_monkey = g_ptr_array_index(monkeys_copy, 0);
-    second_monkey = g_ptr_array_index(monkeys_copy, 1);
+    BENCHMARK_START(day11_part2);
+
+    do_the_monkey_business(monkeys_copy, PT2_ROUNDS, FALSE);
 
     {
-        mpz_t output;
-        mpz_init(output);
-        mpz_mul(output, first_monkey->inspections, second_monkey->inspections);
-        g_autofree gchar *output_str = g_malloc0(mpz_sizeinbase(output, 10) + 2);
-        mpz_get_str(output_str, 10, output);
-        mpz_clear(output);
+        g_autoptr(GPtrArray) tmp = g_ptr_array_copy(monkeys_copy, monkey_copy, NULL);
 
-        g_print("Part II: %s.\n", output_str);
-    }
+        g_ptr_array_sort(tmp, g_ptr_array_monkeys_sort_by_inspections);
+
+        struct monkey *first_monkey = g_ptr_array_index(tmp, 0);
+        struct monkey *second_monkey = g_ptr_array_index(tmp, 1);
+
+        g_print("Part II: %lu.\n", first_monkey->inspections * second_monkey->inspections);
+    }  
+
+    BENCHMARK_END(day11_part2);
 
     return 0;
 }
