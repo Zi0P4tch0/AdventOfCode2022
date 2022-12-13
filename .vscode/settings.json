@@ -4,6 +4,8 @@
         "typeinfo": "c",
         "benchmark.h": "c",
         "random": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "list": "c",
+        "tuple": "c"
     }
 }

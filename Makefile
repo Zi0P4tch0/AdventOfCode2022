@@ -11,7 +11,7 @@ else
 	CFLAGS += -march=native
 endif
 
-DAYS := $(shell seq -f "day%g" 1 12)
+DAYS := $(shell seq -f "day%g" 1 13)
 
 .PHONY: all clean benchmark
 
@@ -26,6 +26,9 @@ day9: obj/day9.o obj/io.o
 day12: obj/day12.o obj/io.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) -fopenmp
 
+day13: obj/day13.o obj/io.o obj/mpc.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
 obj/day%.o: src/day%.c obj
 	$(CC) $(CFLAGS) -c -o $@ $< 
 
@@ -35,7 +38,13 @@ obj/day9.o: src/day9.c obj
 obj/day12.o: src/day12.c obj
 	$(CC) $(CFLAGS) -c -o $@ $< -fopenmp
 
+obj/day13.o: src/day13.c obj
+	$(CC) $(CFLAGS) -c -o $@ $< -I 3rdparty/mpc
+
 obj/io.o: src/io.c obj
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+obj/mpc.o: 3rdparty/mpc/mpc.c obj
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 obj:
