@@ -10,7 +10,6 @@ struct node {
     guint row;
     guint column;
     gchar value;
-    gboolean visited;
     struct node *previous;
 };
 
@@ -38,14 +37,10 @@ g_ptr_array_filter(const GPtrArray *array,
 }
 
 static gboolean
-node_is_reachable_and_not_visited(gconstpointer data, gpointer user_data)
+node_is_reachable_reversed(gconstpointer data, gpointer user_data)
 {
     const struct node *node = data;
     const struct node *source_node = user_data;
-
-    if (node->visited) {
-        return FALSE;
-    }
 
     gboolean is_in_reach = (
         node->row == source_node->row-1 && node->column == source_node->column ||
@@ -58,34 +53,39 @@ node_is_reachable_and_not_visited(gconstpointer data, gpointer user_data)
     gchar node_value = node->value == 'S' ? 'a' : (node->value == 'E' ? 'z' : node->value);
 
     gboolean can_be_traversed = (
-        node_value < source_value  ||
+        node_value > source_value  ||
         node_value == source_value ||
-        node_value == source_value+1
+        node_value == source_value-1
     );
 
     return is_in_reach && can_be_traversed;
 }
 
 static void 
-bfs(GPtrArray *all_nodes, struct node *start)
+bfs(GPtrArray *all_nodes, struct node *start, guint rows, guint columns)
 {
     g_autoptr(GQueue) to_visit = g_queue_new();
 
+    gboolean visited[rows][columns];
+    memset(visited, FALSE, sizeof(visited));
+
     g_queue_push_tail(to_visit, start);
-    start->visited = TRUE;
+    visited[start->row][start->column] = TRUE;
 
     while (to_visit->length > 0) {
         
         struct node *current_node = g_queue_pop_head(to_visit);
 
-        g_autoptr(GPtrArray) reachable_nodes = g_ptr_array_filter(all_nodes, node_is_reachable_and_not_visited, current_node);
+        g_autoptr(GPtrArray) reachable_nodes = g_ptr_array_filter(all_nodes, node_is_reachable_reversed, current_node);
 
         for (guint i=0; i<reachable_nodes->len; i++) {
             struct node *reachable_node = g_ptr_array_index(reachable_nodes, i);
+            if (visited[reachable_node->row][reachable_node->column]) {
+                continue;
+            }
             reachable_node->previous = current_node;
-
             g_queue_push_tail(to_visit, reachable_node);
-            reachable_node->visited = TRUE;
+            visited[reachable_node->row][reachable_node->column] = TRUE;
         }
     }
     
@@ -145,9 +145,9 @@ int main(int argc, char *argv[])
     BENCHMARK_START(day12_part1);
 
     guint part1 = 0;
-    bfs(nodes, start);
+    bfs(nodes, end, n_lines, columns);
     
-    struct node *it = end;
+    struct node *it = start;
     while (it->previous) {
         part1++;
         it = it->previous;
@@ -163,29 +163,30 @@ int main(int argc, char *argv[])
 
     guint part2 = G_MAXUINT;
 
+    for (guint j=0; j<nodes->len; j++) {
+        struct node *node = g_ptr_array_index(nodes, j);
+        node->previous = NULL;
+    }
+
+    bfs(nodes, end, n_lines, columns);
+
     for (guint i=0; i<a_nodes->len; i++) {
-        // Reset nodes
-        for (guint j=0; j<nodes->len; j++) {
-            struct node *node = g_ptr_array_index(nodes, j);
-            node->previous = NULL;
-            node->visited = FALSE;
-        }
         struct node *a_node = g_ptr_array_index(a_nodes, i);
-        bfs(nodes, a_node);
-        struct node *it = end;
         guint steps = 0;
+        it = a_node;
         while (it->previous) {
             steps++;
+            if (it->previous->value == 'E') {
+                #pragma omp ordered
+                part2 = MIN(part2, steps);
+            }
             it = it->previous;
-        }
-        if (steps != 0) {
-            part2 = MIN(part2, steps);
         }
     }
 
-    BENCHMARK_END(day12_part2);
-
     g_print("Part II: %u\n", part2);
+
+    BENCHMARK_END(day12_part2);
  
     return 0;
 }
