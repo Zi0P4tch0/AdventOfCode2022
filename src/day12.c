@@ -177,7 +177,6 @@ int main(int argc, char *argv[])
         while (it->previous) {
             steps++;
             if (it->previous->value == 'E') {
-                #pragma omp ordered
                 part2 = MIN(part2, steps);
             }
             it = it->previous;
