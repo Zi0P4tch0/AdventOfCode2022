@@ -6,8 +6,6 @@
 #include "mem.h"
 #include "macros.h"
 
-#include <ncurses.h>
-
 typedef struct {
     gint x;
     gint y;
@@ -15,35 +13,6 @@ typedef struct {
 
 static void g_list_free_position(gpointer data) {
     g_list_free_full(data, g_free);
-}
-
-static inline void 
-print_grid(const gchar **grid, guint width, guint height) 
-{
-    guint screen_width = 0, screen_height = 0;
-    getmaxyx(stdscr, screen_height, screen_width);
-
-    for (guint y=0; y<MIN(height, screen_height); y++) {
-        for (guint x=0; x<MIN(width, screen_width); x++) {
-            move(y, x);
-            gchar c = grid[y][x];
-            if (c == '.') {
-                attron(COLOR_PAIR(1));
-                addch(c | A_DIM);
-                attroff(COLOR_PAIR(1));
-            } else if (c == '#') {
-                attron(COLOR_PAIR(3));
-                addch(c | A_BOLD);
-                attroff(COLOR_PAIR(3));
-            } else if (c == '+' || c == 'o') {
-                attron(COLOR_PAIR(2));
-                addch(c | A_BOLD);
-                attroff(COLOR_PAIR(2));
-            } 
-        }
-    }
-
-    refresh();
 }
 
 static inline int 
@@ -54,7 +23,9 @@ simulate_grid(gchar **grid, gint width, gint height, gint min_x, gint min_y, gbo
     // Set sand
     grid[sand_y-min_y][sand_x-min_x] = '+';
     while (TRUE) {
-        print_grid((const gchar **)grid, width, height);
+        if (grid[sand_y-min_y][sand_x-min_x] == 'o') {
+            return n_sand - 1;
+        }
         if (sand_y+1 >= height+min_y) {
             return n_sand - 1;
         }
@@ -86,13 +57,9 @@ simulate_grid(gchar **grid, gint width, gint height, gint min_x, gint min_y, gbo
             // Settle down
             grid[sand_y-min_y][sand_x-min_x] = 'o';
             n_sand++;
-            if (part2 && grid[0][500] == 'o') {
-                return n_sand - 1;
-            }
             sand_x = 500;
             sand_y = 0;
         }
-        g_usleep(5000);
     }
    
 }
@@ -116,19 +83,6 @@ int main(int argc, char *argv[])
         g_printerr("Unable to read input file.\n");
         return 1;
     }
-
-    // Ncurses setup
-    initscr();
-    noecho();
-    cbreak();
-    curs_set(0);
-    start_color();
-
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(3, COLOR_RED, COLOR_BLACK);
-
-    clear();
 
     // Processing
 
@@ -163,8 +117,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    guint width = max_x - min_x + 1;
     guint height = max_y - min_y + 1;
+    guint width = 3 * height;
 
     // Allocate char grid
 
@@ -175,11 +129,13 @@ int main(int argc, char *argv[])
     }
 
     // Draw rocks
+    gint x_shift = width / 3 - (max_x - min_x) / 2;
+
     for (guint i=0; i<paths->len; i++) {
         GList *list = g_ptr_array_index(paths, i);
         for (GList *l=list; l; l=l->next) {
             position *pos = l->data;
-            grid[pos->y-min_y][pos->x-min_x] = '#';
+            grid[pos->y-min_y][pos->x-min_x+x_shift] = '#';
             // Get previous position if any
             if (l->prev) {
                 position *prev = l->prev->data;
@@ -187,22 +143,22 @@ int main(int argc, char *argv[])
                     // Vertical
                     if (prev->y < pos->y) {
                         for (guint y=prev->y+1; y<pos->y; y++) {
-                            grid[y-min_y][pos->x-min_x] = '#';
+                            grid[y-min_y][pos->x-min_x+x_shift] = '#';
                         }
                     } else {
                         for (guint y=pos->y+1; y<prev->y; y++) {
-                            grid[y-min_y][pos->x-min_x] = '#';
+                            grid[y-min_y][pos->x-min_x+x_shift] = '#';
                         }
                     }
                 } else {
                     // Horizontal
                     if (prev->x < pos->x) {
                         for (guint x=prev->x+1; x<pos->x; x++) {
-                            grid[pos->y-min_y][x-min_x] = '#';
+                            grid[pos->y-min_y][x-min_x+x_shift] = '#';
                         }
                     } else {
                         for (guint x=pos->x+1; x<prev->x; x++) {
-                            grid[pos->y-min_y][x-min_x] = '#';
+                            grid[pos->y-min_y][x-min_x+x_shift] = '#';
                         }
                     }
                 }
@@ -210,18 +166,48 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Part I
-    guint part1 = simulate_grid(grid, width, height, min_x, min_y, FALSE);
+    // Make a copy for part II
 
-    endwin();
+    gchar ** grid2 = g_malloc0_n(height+2, sizeof(gchar*));
+    for (guint i=0; i<height+2; i++) {
+        grid2[i] = g_malloc0_n(width, sizeof(gchar));
+        if (i ==height) {
+            memset(grid2[i], '.', width); // Air
+        } else if (i==height+1) {
+            memset(grid2[i], '#', width); // Floor
+        } else {
+            memcpy(grid2[i], grid[i], width);
+        }
+    }
+
+    // Part I
+    BENCHMARK_START(day14_part1);
+
+    guint part1 = simulate_grid(grid, width, height, min_x - x_shift, min_y, FALSE);
+
+    BENCHMARK_END(day14_part1);
+
+    // Part II
+
+    BENCHMARK_START(day14_part2);
+
+    guint part2 = simulate_grid(grid2, width, height+2, min_x - x_shift, min_y, TRUE);
+
+    BENCHMARK_END(day14_part2);
 
     g_print("Part I: %d\n", part1);
+    g_print("Part II: %d\n", part2);
 
     // Free grids
     for (guint i=0; i<height; i++) {
         g_free(grid[i]);
     }
     g_free(grid);
+
+    for (guint i=0; i<height+2; i++) {
+        g_free(grid2[i]);
+    }
+    g_free(grid2);
  
     return 0;
 }

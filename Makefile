@@ -23,9 +23,6 @@ day%: obj/day%.o obj/io.o
 day9: obj/day9.o obj/io.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(shell pkg-config --libs ncurses)
 
-day14: obj/day14.o obj/io.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(shell pkg-config --libs ncurses)
-
 day12: obj/day12.o obj/io.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) -fopenmp
 
@@ -36,9 +33,6 @@ obj/day%.o: src/day%.c obj
 	$(CC) $(CFLAGS) -c -o $@ $< 
 
 obj/day9.o: src/day9.c obj
-	$(CC) $(CFLAGS) -c -o $@ $< $(shell pkg-config --cflags ncurses)
-
-obj/day14.o: src/day14.c obj
 	$(CC) $(CFLAGS) -c -o $@ $< $(shell pkg-config --cflags ncurses)
 
 obj/day12.o: src/day12.c obj
